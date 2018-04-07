@@ -1,0 +1,388 @@
+---
+title: "Assignment 3 - Statistical Modelling"
+author: "Mughundhan Chandrasekar"
+date: "11/6/2017"
+output:
+  word_document: default
+  html_document: default
+---
+
+###Question 1.
+
+Draw an example (of your own invention) of a partition of two-dimensional
+feature space that could result from recursive binary
+splitting. Your example should contain at least six regions. Draw a
+decision tree corresponding to this partition. Be sure to label all aspects
+of your figures, including the regions R1, R2,..., the cutpoints
+t1, t2,..., and so forth.
+
+**Solution**:
+- t1, t2 ..... t5 -> Cut points
+- R1, R2 ..... R6 -> Regions
+
+```{r warning=FALSE, message=FALSE}
+rm(list=ls())
+par(xpd = NA)
+plot(NA, NA, type = "n", xlim = c(0,100), ylim = c(0,100), xlab = "X", ylab = "Y")
+# t1: x = 40; (40, 0) (40, 100)
+lines(x = c(40,40), y = c(0,100))
+text(x = 40, y = 108, labels = c("t1"), col = "red")
+# t2: y = 75; (0, 75) (40, 75)
+lines(x = c(0,40), y = c(75,75))
+text(x = -8, y = 75, labels = c("t2"), col = "red")
+# t3: x = 75; (75,0) (75, 100)
+lines(x = c(75,75), y = c(0,100))
+text(x = 75, y = 108, labels = c("t3"), col = "red")
+# t4: x = 20; (20,0) (20, 75)
+lines(x = c(20,20), y = c(0,75))
+text(x = 20, y = 80, labels = c("t4"), col = "red")
+# t5: y=25; (75,25) (100,25)
+lines(x = c(75,100), y = c(25,25))
+text(x = 70, y = 25, labels = c("t5"), col = "red")
+
+text(x = (40+75)/2, y = 50, labels = c("R1"))
+text(x = 20, y = (100+75)/2, labels = c("R2"))
+text(x = (75+100)/2, y = (100+25)/2, labels = c("R3"))
+text(x = (75+100)/2, y = 25/2, labels = c("R4"))
+text(x = 30, y = 75/2, labels = c("R5"))
+text(x = 10, y = 75/2, labels = c("R6"))
+```
+
+###Question 2.
+
+Consider the Gini index, classification error, and entropy in a
+simple classification setting with two classes. Create a single plot
+that displays each of these quantities as a function of ??pm1. The xaxis
+should display ??pm1, ranging from 0 to 1, and the y-axis should
+display the value of the ***Gini index***, ***classification error***, and ***entropy***.
+
+**Solution**:
+
+```{r warning=FALSE, message=FALSE}
+pm1 <- seq(0, 1, 0.01)
+gini.index <- 2 * pm1 * (1 - pm1)
+class.error <- 1 - pmax(pm1, 1 - pm1)
+cross.entropy <- - (pm1 * log(pm1) + (1 - pm1) * log(1 - pm1))
+Values <- cbind(gini.index, class.error, cross.entropy)
+matplot(pm1, Values, col = c("red", "green", "blue"), ylab = "Values of Gini index, classification error and entropy")
+
+legend("topleft", 
+       inset=-.01, 
+       legend=c("Gini Index", "Classification Err", "Entropy"), 
+       pch=1, 
+       col = c("red", "green", "blue"), 
+       horiz=FALSE)
+
+```
+
+
+###Question 3.
+
+In the lab, a classification tree was applied to the Carseats data set after
+converting Sales into a qualitative response variable. Now we will
+seek to predict Sales using regression trees and related approaches,
+treating the response as a quantitative variable.
+
+
+####Question 3.a. 
+
+Split the data set into a training set and a test set.
+
+**Solution**:
+
+```{r warning=FALSE, message=FALSE}
+rm(list=ls())
+library(ISLR)
+library(plotrix)
+set.seed(1)
+train <- sample(1:nrow(Carseats), nrow(Carseats) / 2)
+Carseats.train <- Carseats[train, ]
+Carseats.test <- Carseats[-train, ]
+head(Carseats)
+
+
+prop_fdata <- cbind(nrow(Carseats.train), nrow(Carseats.test))
+pie_label <- cbind("train data set 50%", "test data set 50%")
+prop_fdata
+pie3D(prop_fdata, labels = pie_label,
+      explode = 0.1,
+  	main="Proportion of Train and Test datasets from CarSeats dataset",
+    col = c("Red", "Yellow"))
+test.size <- nrow(Carseats.test)
+train.size <- nrow(Carseats.train)
+cbind(test.size, train.size)
+rm(test.size, train.size)
+
+```
+
+**Observation**: 
+
+1. Number of observations in original data set is 400
+2. Number of observations in train data set is 200
+3. Number of observations in test data set is 200
+
+####Question 3.b. 
+
+Fit a regression tree to the training set. Plot the tree, and interpret
+the results. What test MSE do you obtain?
+
+**Solution**: The tree plot is shown below followed by the interpretation
+
+```{r warning=FALSE, message=FALSE}
+library(tree)
+library(readr)
+library(dplyr)
+library(party)
+library(rpart)
+library(rpart.plot)
+library(ROCR)
+
+
+# tree.carseats <- rpart(Sales ~ ., 
+#            data = Carseats.train,
+#            method = "anova") 
+# rpart.plot(tree.carseats)
+# 
+# rm(tree.carseats)
+
+
+tree.carseats <- tree(Sales ~ ., data = Carseats.train)
+summary(tree.carseats)
+
+plot(tree.carseats)
+text(tree.carseats, pretty = 0, cex = 0.5)
+```
+
+**Solution**: The test MSE can be computed as shown below.
+
+```{r warning=FALSE, message=FALSE}
+yhat <- predict(tree.carseats, newdata = Carseats.test)
+round(mean((yhat - Carseats.test$Sales)^2),4)
+```
+
+**Observation**: The Test MSE is found to be 4.1489, which is approximately 4.15.
+
+####Question 3.c. 
+
+Use cross-validation in order to determine the optimal level of
+tree complexity. Does pruning the tree improve the test MSE?
+
+**Solution**:
+
+```{r warning=FALSE, message=FALSE}
+cv.carseats <- cv.tree(tree.carseats)
+plot(cv.carseats$size, cv.carseats$dev, type = "b")
+tree.min <- which.min(cv.carseats$dev)
+points(tree.min, cv.carseats$dev[tree.min], col = "red", cex = 2, pch = 20)
+tree.min #Size of tree selected by cross-validation
+```
+
+**Observation**: The  size of the tree selected by cross-validation for the pruning purpose is found to be 8.
+
+```{r warning=FALSE, message=FALSE}
+tree.carseats <- tree(Sales ~ ., data = Carseats.train)
+
+prune.carseats <- prune.tree(tree.carseats, best = 8)
+plot(prune.carseats)
+text(prune.carseats, pretty = 0)
+```
+
+```{r warning=FALSE, message=FALSE}
+
+yhat <- predict(prune.carseats, newdata = Carseats.test)
+round(mean((yhat - Carseats.test$Sales)^2), 4)
+```
+
+**Observation**: On pruning it is found that the Test MSE increases. On pruning the Test MSE is found to be 5.0909, which is approximately 5.10.
+
+
+####Question 3.d.
+
+Use the bagging approach in order to analyze this data. What
+test MSE do you obtain? Use the importance() function to determine
+which variables are most important.
+
+**Solution**:
+
+```{r warning=FALSE, message=FALSE}
+library(randomForest)
+bag.carseats <- randomForest(Sales ~ ., data = Carseats.train, mtry = 10, ntree = 500, importance = TRUE)
+yhat.bag <- predict(bag.carseats, newdata = Carseats.test)
+round(mean((yhat.bag - Carseats.test$Sales)^2), 4)
+importance(bag.carseats)
+
+```
+
+**Observation**: 
+
+1. We can see that ***Bagging reduces the Test MSE***. The Test MSE is found to be 2.5799, which is approximately 2.58.
+2. With the help of the ***importance function***, we can determine that ***Price*** and ***ShelveLoc*** are the two most important variables.
+
+
+####Question 3.e.
+
+Use random forests to analyze this data. What test MSE do you
+obtain? Use the importance() function to determine which variables
+are most important. Describe the effect of m, the number of
+variables considered at each split, on the error rate
+obtained.
+
+**Solution**:
+
+```{r warning=FALSE, message=FALSE}
+rf.carseats <- randomForest(Sales ~ ., data = Carseats.train, mtry = 3, ntree = 500, importance = TRUE)
+yhat.rf <- predict(rf.carseats, newdata = Carseats.test)
+round(mean((yhat.rf - Carseats.test$Sales)^2), 4)
+importance(rf.carseats)
+```
+
+**Observation**: 
+
+1. We can see that ***Test MSE on performing Random Forest is higher than when we perform Bagging***. The Test MSE is found to be 3.3298, which is approximately 3.33.
+2. With the help of the ***importance function***, we can determine that ***Price*** and ***ShelveLoc*** are the two most important variables.
+
+
+###Question 4
+
+We now use boosting to predict Salary in the Hitters data set.
+
+####Question 4.a.
+
+Remove the observations for whom the salary information is
+unknown, and then log-transform the salaries.
+
+```{r warning=FALSE, message=FALSE}
+str(Hitters$Salary)
+Hitters <- na.omit(Hitters)
+Hitters$Salary <- log(Hitters$Salary)
+str(Hitters$Salary)
+```
+
+**Observation**: 
+
+1. The observations for whom the salary information is unknown is removed using ***na.omit function***
+2. log-transform the salaries using ***log function*** 
+
+####Question 4.b.
+
+Create a training set consisting of the first 200 observations, and
+a test set consisting of the remaining observations.
+
+**Solution**:
+```{r warning=FALSE, message=FALSE}
+train <- 1:200
+Hitters.train <- Hitters[train, ]
+Hitters.test <- Hitters[-train, ]
+
+nrow(Hitters)
+nrow(Hitters.train)
+nrow(Hitters.test)
+```
+
+**Observation**:
+
+1. Number of observations in Hitters dataset: 263
+2. Number of observations in train dataset: 200
+3. Number of observations in test dataset: 63
+
+####Question 4.c.
+
+Perform boosting on the training set with 1,000 trees for a range
+of values of the shrinkage parameter ??. Produce a plot with
+different shrinkage values on the x-axis and the corresponding
+training set MSE on the y-axis
+
+```{r warning=FALSE, message=FALSE}
+library(gbm)
+set.seed(1)
+pows <- seq(-10, -0.2, by = 0.1)
+lambdas <- 10^pows
+train.err <- rep(NA, length(lambdas))
+for (i in 1:length(lambdas)) {
+    boost.hitters <- gbm(Salary ~ ., data = Hitters.train, distribution = "gaussian", n.trees = 1000, shrinkage = lambdas[i])
+    pred.train <- predict(boost.hitters, Hitters.train, n.trees = 1000)
+    train.err[i] <- mean((pred.train - Hitters.train$Salary)^2)
+}
+plot(lambdas, train.err, type = "b", xlab = "Shrinkage values", ylab = "Training MSE", col="blue", main = "Shrinkage Parameters Vs Training Set MSE")
+
+round(min(train.err), 4)
+round(lambdas[which.min(train.err)], 4)
+```
+
+**Observation**: We can infer that the minimum train MSE is 0.0023, and is obtained for ??=0.6309
+
+####Question 4.d.
+
+Produce a plot with different shrinkage values on the x-axis and
+the corresponding test set MSE on the y-axis.
+
+```{r warning=FALSE, message=FALSE}
+set.seed(1)
+test.err <- rep(NA, length(lambdas))
+for (i in 1:length(lambdas)) {
+    boost.hitters <- gbm(Salary ~ ., data = Hitters.train, distribution = "gaussian", n.trees = 1000, shrinkage = lambdas[i])
+    yhat <- predict(boost.hitters, Hitters.test, n.trees = 1000)
+    test.err[i] <- mean((yhat - Hitters.test$Salary)^2)
+}
+plot(lambdas, test.err, type = "b", xlab = "Shrinkage values", ylab = "Test MSE", col="orange", main = "Shrinkage Parameters Vs Test Set MSE")
+
+round(min(test.err), 4)
+round(lambdas[which.min(test.err)], 4)
+```
+
+**Observation**: We can infer that the minimum test MSE is 0.25, and is obtained for ??=0.079
+
+
+####Question 4.e.
+
+Compare the test MSE of boosting to the test MSE that results
+from applying two of the regression approaches seen in
+Chapters 3 and 6.
+
+```{r warning=FALSE, message=FALSE}
+library(glmnet)
+
+fit1 <- lm(Salary ~ ., data = Hitters.train)
+pred1 <- predict(fit1, Hitters.test)
+round(mean((pred1 - Hitters.test$Salary)^2), 4)
+
+x <- model.matrix(Salary ~ ., data = Hitters.train)
+x.test <- model.matrix(Salary ~ ., data = Hitters.test)
+y <- Hitters.train$Salary
+fit2 <- glmnet(x, y, alpha = 0)
+pred2 <- predict(fit2, s = 0.01, newx = x.test)
+round(mean((pred2 - Hitters.test$Salary)^2), 4)
+```
+
+**Observation**:
+
+1. The test MSE for boosting is lower than Linear Regression [0.4918]. 
+2. The test MSE for boosting is lower than Ridge Regression [0.457].
+
+
+####Question 4.f.
+
+Which variables appear to be the most important predictors in
+the boosted model?
+
+```{r warning=FALSE, message=FALSE}
+library(gbm)
+boost.hitters <- gbm(Salary ~ ., data = Hitters.train, distribution = "gaussian", n.trees = 1000, shrinkage = lambdas[which.min(test.err)])
+summary(boost.hitters)
+```
+
+**Observation**: We can infer that ***CAtBat***  is the most important predictor in the boosted model.
+
+####Question 4.g.
+
+Now apply bagging to the training set. What is the test set MSE
+for this approach?
+
+```{r warning=FALSE, message=FALSE}
+set.seed(1)
+bag.hitters <- randomForest(Salary ~ ., data = Hitters.train, mtry = 19, ntree = 500)
+yhat.bag <- predict(bag.hitters, newdata = Hitters.test)
+round(mean((yhat.bag - Hitters.test$Salary)^2), 4)
+```
+
+**Observation**: The test MSE for bagging [0.2314] is slightly lower than test MSE for boosting. 

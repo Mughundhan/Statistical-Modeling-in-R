@@ -1,0 +1,565 @@
+---
+title: "Assignment-4 Statistical Modelling"
+author: "Mughundhan Chandrasekar"
+date: "11/20/2017"
+output:
+  word_document: default
+  html_document: default
+---
+
+###Creating Environment
+```{r warning=FALSE, message=FALSE}
+rm(list = ls())
+setwd("/Users/Mughundhan/UIC/UIC Academics/FALL 2017/BIZ ANALYTICS STATS/Assignment 4")
+```
+
+##Question 1.
+
+Here we explore the maximal margin classifier on a toy data set.
+
+###Question 1.(a) 
+
+We are given n = 7 observations in p = 2 dimensions. For each observation, there is an associated class label. Sketch the observations.
+
+**Answer:** The observation is sketched as shown below.
+```{r warning=FALSE, message=FALSE}
+X1 <- c(3, 2, 4, 1, 2, 4, 4)
+X2 <- c(4, 2, 4, 4, 1, 3, 1)
+Y <- c("red", "red", "red", "red", "blue", "blue", "blue")
+fdata <- as.data.frame(cbind(X1, X2, Y))
+fdata
+plot(X1, X2, col = Y, xlim = c(0, 5), ylim = c(0, 5), pch=20)
+```
+
+
+###Question 1.(b) 
+Sketch the optimal separating hyperplane, and provide the equation for this hyperplane.
+
+
+**Answer:**
+
+As shown in the plot, the optimal separating hyperplane has to be between the observations **(2,1)** and **(2,2)**, and between the observations **(4,3)** and **(4,4)**.
+
+So it is obvious that the line passes through the points **(2, 1.5)** and **(4, 3.5)**. The corresponding equation is given as follows: **X1 - X2 - 0.5 = 0**
+
+```{r warning=FALSE, message=FALSE}
+library(e1071)
+library(dplyr)
+slope=1
+intercept=-0.5
+plot(X1, X2, col = Y, xlim = c(0, 5), ylim = c(0, 5), pch=20)
+abline(intercept, slope, col="green")
+
+
+```
+
+
+###Question 1.(c)
+Describe the classification rule for the maximal margin classifier.
+It should be something along the lines of 
+***Classify to Red if b0 + b1X1 + b2X2 > 0, and classify to Blue otherwise***. 
+Provide the values for b0, b1, and b2.
+
+**NOTE: "b"" denotes beta**
+
+**Answer:**
+```{r warning=FALSE, message=FALSE}
+beta <- c(-intercept, solve(matrix(c(2, 1.5, 4, 3.5), nrow = 2, byrow = T), c(intercept, intercept)))
+beta
+```
+
+**Observation:** The beta values are given as follows:
+
+- b0 = 0.5
+- b1 = -1
+- b2 = 1
+
+###Question 1.(d)
+On your sketch, indicate the margin for the maximal margin
+hyperplane.
+
+**Answer:** The sketch shown below, which is followed by the observation.
+```{r warning=FALSE, message=FALSE}
+plot(X1, X2, col=Y, pch=20, data=fdata)
+abline(-beta[1], beta[3])
+abline(beta[2], beta[3], lty = 2)
+abline(0, beta[3], lty = 2)
+```
+
+**Observation:**
+
+The maximal margin hyperplane is shown as a solid line. The "Margin Width" is the distance from the solid line to either of the dashed lines which is 1/4.
+
+
+###Question 1.(e)
+Indicate the support vectors for the maximal margin classifier.
+
+**Answer:** The corresponding coordinates are indicated as * (asterisk)
+
+
+```{r warning=FALSE, message=FALSE}
+# Replot, this time indicating the support vectors for the maximal margin classifier.
+plot(X1, X2, col=Y, pch=20, data=fdata)
+
+abline(intercept, slope)
+points(c(2, 4), c(2, 4), pch = 8, col = "red")
+points(c(2, 4), c(1, 3), pch = 8, col = "blue")
+```
+
+**Observation:** We can see that the coordinates ***(2, 1), (2, 2), (4, 3) and (4, 4)*** are the support vectors for the maximal margin classifier.
+
+###Question 1.(f)
+
+Argue that a slight movement of the seventh observation would
+not affect the maximal margin hyperplane.
+
+**Answer:** The seventh observation is (4, 1). Slight movement of the seventh observation would
+not affect the maximal margin hyperplane ***because the seventh observation (4, 1) is not a support vector*** and is quite far from the margins of the separating hyperplane with maximum margin
+
+
+###Question 1.(g)
+
+Sketch a hyperplane that is not the optimal separating hyperplane,
+and provide the equation for this hyperplane.
+
+
+**Answer:** For example, the hyperplane which equation is **X1 - X2 -1.5 = 0**  is not the optimal separating hyperplane.
+
+```{r warning=FALSE, message=FALSE}
+plot(X1, X2, col=Y, pch=19, data=fdata)
+abline(-1.5, 1, col="brown",lwd=2)
+```
+
+
+###Question 1.(h)
+
+Draw an additional observation on the plot so that the two
+classes are no longer separable by a hyperplane.
+
+**Answer:** The additional observation is (3, 1) which is represented by green coloured *. 
+
+```{r warning=FALSE, message=FALSE}
+plot(X1, X2, col = Y, xlim = c(0, 5), ylim = c(0, 5), pch=19)
+points(c(3), c(1), col = c("darkgreen"), pch=8)
+```
+
+**Observation:** On including the additional observation **(3, 1)**, the two classes prove to be no longer separable by a hyperplane.
+
+##Question 2.
+
+In this problem, you will use support vector approaches in order to
+predict whether a given car gets high or low gas mileage based on the
+Auto data set.
+
+###Question 2.(a)
+
+Create a binary variable that takes on a 1 for cars with gas
+mileage above the median, and a 0 for cars with gas mileage
+below the median.
+
+**Answer:** The binary variable is created as shown below, which is followed by the observtions.
+
+```{r warning=FALSE, message=FALSE}
+library(ISLR)
+median_mileage <- median(Auto$mpg)
+
+#Median for the mileage 
+median_mileage
+
+mpg_level <- ifelse(Auto$mpg > median(Auto$mpg), 1, 0)
+Auto$mpg_level <- as.factor(mpg_level)
+head(Auto)
+```
+
+**Observation:**
+
+1. We can see that the median for the mileage is 22.75
+2. mpg_level has two levels:
+  + "1" if the mileage greater than the median mileage (found to be 22.75)
+  + "0" if the mileage lesser than or equal to the median mileage
+  
+
+###Question 2.(b) 
+Fit a support vector classifier to the data with various values
+of cost, in order to predict whether a car gets high or low gas
+mileage. Report the cross-validation errors associated with different
+values of this parameter. Comment on your results.
+
+**Answer:** The comments are given below the r-code and the corresponding output.
+
+```{r warning=FALSE, message=FALSE}
+library(e1071)
+set.seed(1)
+tune_linear <- tune(svm, mpg_level ~ ., data = Auto, kernel = "linear", ranges = list(cost = c(0.01, 0.1, 1, 5, 10, 100, 1000)))
+summary(tune_linear)
+```
+
+**Observation:**
+
+1. We can see that the 10-fold Cross-validation has worked perfecty.
+2. For a Linear Kernel, the Lowest cross-validation error is obtained for the **Cost of 1**.
+
+###Question 2.(c) 
+
+(c) Now repeat (b), this time using SVMs with radial and polynomial
+basis kernels, with different values of gamma and degree and
+cost. Comment on your results.
+
+**Answer:** Now let us fit a svm model using Radial and then using Polynomial.
+
+**SVM with Radial**
+
+```{r warning=FALSE, message=FALSE}
+set.seed(1)
+tune_radial <- tune(svm, mpg_level ~ ., data = Auto, kernel = "radial", ranges = list(cost = c(0.01, 0.1, 1, 5, 10, 100), gamma = c(0.01, 0.1, 1, 5, 10, 100)))
+summary(tune_radial)
+```
+
+**SVM with Polynomial**
+
+```{r warning=FALSE, message=FALSE}
+set.seed(1)
+tune_poly <- tune(svm, mpg_level ~ ., data = Auto, kernel = "polynomial", ranges = list(cost = c(0.01, 0.1, 1, 5, 10, 100), degree = c(2, 3, 4)))
+summary(tune_poly)
+```
+
+**Observation:**
+
+1. For a **radial kernel**, the lowest cross-validation error is obtained for a ***gamma of 0.01 and a cost of 100.***
+2. For a **polynomial kernel**, the lowest cross-validation error is obtained for a ***degree of 2 and a cost of 100.***
+
+###Question 2.(d) 
+
+Make some plots to back up your assertions in (b) and (c).
+
+```{r warning=FALSE, message=FALSE, error=FALSE}
+Auto$mpg_level <- as.factor(Auto$mpg_level)
+
+svm_linear <- svm(mpg_level ~ ., data = Auto, kernel = "linear", cost = 1)
+svm_radial <- svm(mpg_level ~ ., data = Auto, kernel = "radial", cost = 100, gamma = 0.01)
+svm_poly <- svm(mpg_level ~ ., data = Auto, kernel = "polynomial", cost = 100, degree = 2)
+plotpairs = function(fit) {
+    for (name in names(Auto)[!(names(Auto) %in% c("mpg", "mpg_level", "name"))]) {
+        plot(fit, Auto, col = c("pink", "grey"), as.formula(paste("mpg~", name, sep = "")))
+    }
+}
+```
+
+**Now let us make some plots in support of assertions made for SVM with Linear Kernel**
+```{r warning=FALSE, message=FALSE, error=FALSE}
+plotpairs(svm_linear)
+```
+
+**Now let us make some plots in support of assertions made for SVM with Radial Kernel**
+```{r warning=FALSE, message=FALSE, error=FALSE}
+plotpairs(svm_radial)
+```
+
+**Now let us make some plots in support of assertions made for SVM with Polynomial Kernel**
+```{r warning=FALSE, message=FALSE, error=FALSE}
+plotpairs(svm_poly)
+```
+
+##Question 3. 
+
+In this problem, you will perform K-means clustering manually, with
+K = 2, on a small example with n = 6 observations and p = 2
+features. The observations are as follows.
+
+```{r warning=FALSE, message=FALSE, error=FALSE}
+rm(list=ls())
+X1 <- c(1,1,0,5,6,4)
+X2 <- c(4,3,4,1,2,0)
+fdata <- cbind(X1, X2)
+fdata
+```
+
+###Question 3.(a)
+
+Plot the observations.
+ 
+ ```{r warning=FALSE, message=FALSE, error=FALSE}
+plot(fdata, pch=20, cex=2, col="purple")
+```
+
+###Question 3.(b)
+
+Randomly assign a cluster label to each observation. You can
+use the sample() command in R to do this. Report the cluster
+labels for each observation.
+
+```{r warning=FALSE, message=FALSE, error=FALSE}
+set.seed(1)
+labels <- sample(2, nrow(fdata), replace = T)
+labels
+
+plot(fdata, col = (labels + 1), pch = 20, cex = 2)
+```
+
+###Question 3.(c)
+
+Compute the centroid for each cluster.
+
+**Computations:**
+
+```{r warning=FALSE, message=FALSE, error=FALSE}
+set.seed(1)
+centroid1 <- c(mean(fdata[labels == 1, 1]), mean(fdata[labels == 1, 2]))
+centroid2 <- c(mean(fdata[labels == 2, 1]), mean(fdata[labels == 2, 2]))
+plot(fdata, col=(labels + 1), pch = 20, cex = 2)
+points(centroid1[1], centroid1[2], col = 2, pch = 4)
+points(centroid2[1], centroid2[2], col = 3, pch = 4)
+```
+
+We can compute the **centroid for green cluster** as shown below:
+```{r warning=FALSE, message=FALSE, error=FALSE}
+X11 <- (1/3)*(0+4+5)
+X12 <- (1/3)*(4+0+1)
+cent_green_clust <- cbind(X11, X12)
+cent_green_clust
+```
+
+We can compute the **centroid for red cluster** as shown below:
+```{r warning=FALSE, message=FALSE, error=FALSE}
+X21 <- (1/3)*(1+1+6)
+X22 <- (1/3)*(2+4+3)
+cent_red_clust <- cbind(X21, X22)
+cent_red_clust
+```
+
+###Question 3.(d)
+Assign each observation to the centroid to which it is closest, in
+terms of Euclidean distance. Report the cluster labels for each
+observation.
+
+**Solution:**
+Let us have a look at the plot (before assigning to the closest centroid w.r.to Euclidean distance)
+```{r warning=FALSE, message=FALSE, error=FALSE}
+plot(fdata, col=(labels + 1), pch = 20, cex = 2)
+points(centroid1[1], centroid1[2], col = 2, pch = 4)
+points(centroid2[1], centroid2[2], col = 3, pch = 4)
+```
+
+**Now let us assign each observation to the closest centroid [w.r.to Euclidean distance]**
+```{r warning=FALSE, message=FALSE, error=FALSE}
+labels <- c(1, 1, 1, 2, 2, 2)
+plot(fdata, col = (labels + 1), pch = 20, cex = 2)
+points(centroid1[1], centroid1[2], col = 2, pch = 4)
+points(centroid2[1], centroid2[2], col = 3, pch = 4)
+```
+
+###Question 3.(e)
+Repeat (c) and (d) until the answers obtained stop changing.
+
+**Answer:**
+
+We can compute the **centroid for green cluster** as shown below:
+```{r warning=FALSE, message=FALSE, error=FALSE}
+X11 <- (1/3)*(4+5+6)
+X12 <- (1/3)*(0+1+2)
+cent_green_clust <- cbind(X11, X12)
+cent_green_clust
+```
+
+We can compute the **centroid for red cluster** as shown below:
+```{r warning=FALSE, message=FALSE, error=FALSE}
+X21 <- (1/3)*(0+1+1)
+X22 <- (1/3)*(3+4+4)
+cent_red_clust <- cbind(X21, X22)
+cent_red_clust
+```
+
+Let us plot when the answers stop changing
+```{r warning=FALSE, message=FALSE, error=FALSE}
+centroid1 <- c(mean(fdata[labels == 1, 1]), mean(fdata[labels == 1, 2]))
+centroid2 <- c(mean(fdata[labels == 2, 1]), mean(fdata[labels == 2, 2]))
+plot(fdata, col=(labels + 1), pch = 20, cex = 2)
+points(centroid1[1], centroid1[2], col = 2, pch = 4)
+points(centroid2[1], centroid2[2], col = 3, pch = 4)
+```
+
+**Observation:** When we assign each observation to the centroid to which it is the closest, then nothing changes, so the algorithm stops at this step.
+
+###Question 3.(f)
+In your plot from (a), color the observations according to the
+cluster labels obtained.
+
+
+**Answer:**
+```{r warning=FALSE, message=FALSE, error=FALSE}
+plot(fdata, col=(labels + 1), pch = 20, cex = 2)
+```
+
+##Question 4.
+
+In this problem, you will generate simulated data, and then perform
+PCA and K-means clustering on the data.
+
+###Question 4.(a) 
+
+Generate a simulated data set with 20 observations in each of
+three classes (i.e. 60 observations total), and 50 variables.
+Hint: There are a number of functions in R that you can use to
+generate data. One example is the rnorm() function; runif() is
+another option. Be sure to add a mean shift to the observations
+in each class so that there are three distinct classes.
+
+**Answer:**
+
+```{r warning=FALSE, message=FALSE, error=FALSE}
+
+set.seed(2)
+x <- matrix(rnorm(20 * 3 * 50, mean = 0, sd = 0.001), ncol = 50)
+x[1:20, 2] <- 1
+x[21:40, 1] <- 2
+x[21:40, 2] <- 2
+x[41:60, 1] <- 1
+true_labels <- c(rep(1, 20), rep(2, 20), rep(3, 20))
+head(x)
+true_labels
+```
+
+
+###Question 4.(b) 
+
+Perform PCA on the 60 observations and plot the first two principal
+component score vectors. Use a different color to indicate
+the observations in each of the three classes. If the three classes
+appear separated in this plot, then continue on to part (c). If
+not, then return to part (a) and modify the simulation so that
+there is greater separation between the three classes. Do not
+continue to part (c) until the three classes show at least some
+separation in the first two principal component score vectors.
+
+**Answer:**
+
+```{r warning=FALSE, message=FALSE, error=FALSE}
+
+pr_compx <- prcomp(x)
+plot(pr_compx$x[, 1:2], col = 1:3, xlab = "Z1", ylab = "Z2", pch = 19)
+
+```
+
+**Observation:**
+
+1. We can see that three classes are uniquely identified based on color - red, green, blue.
+2. All three classes looks to be well-separated, thus we can move to part 4.(c) on completion.
+
+
+###Question 4.(c) 
+
+Perform K-means clustering of the observations with K = 3.
+How well do the clusters that you obtained in K-means clustering
+compare to the true class labels?
+Hint: You can use the table() function in R to compare the true
+class labels to the class labels obtained by clustering. Be careful
+how you interpret the results: K-means clustering will arbitrarily
+number the clusters, so you cannot simply check whether the true
+class labels and clustering labels are the same.
+
+**Answer:**
+
+```{r warning=FALSE, message=FALSE, error=FALSE}
+
+km_three <- kmeans(x, 3, nstart = 20)
+table(true_labels, km_three$cluster)
+
+```
+
+**Observation:** 
+
+1. We can say that the clusters we just obtained via K-means Clustering perform pretty well. 
+2. We can see that there are 3 clusters.
+3. Thus, we can conclude that, **the observations are perfectly clustered**.
+
+
+###Question 4.(d) 
+
+Perform K-means clustering with K = 2. Describe your results.
+
+**Answer:**
+
+```{r warning=FALSE, message=FALSE, error=FALSE}
+
+km_two <- kmeans(x, 2, nstart = 20)
+table(true_labels, km_two$cluster)
+
+```
+
+**Observation:** 
+
+1. We can see that there are two clusters.
+
+2. On performing K-means clustering with k=2, we can find that all the observations of one of the three clusters (previously seen) is now absorbed in one of the two clusters. 
+
+3. Further, the result shows that the second cluster has absorbed most of the observations.
+
+
+###Question 4.(e) 
+
+Now perform K-means clustering with K = 4, and describe your
+results.
+
+**Answer:**
+
+```{r warning=FALSE, message=FALSE, error=FALSE}
+
+km_four <- kmeans(x, 4, nstart = 20)
+table(true_labels, km_four$cluster)
+
+```
+
+**Observation:** 
+
+1. We can see that there are four clusters
+2. The first cluster and the second cluster is split in-order to facilitate the presence of observations in the third and the fourth cluster.
+3. Looks like, first cluster is split to form cluster 1 and cluster 4
+4. Further, second cluster is split to form cluster 2 and cluster 3.
+
+###Question 4.(f) 
+
+Now perform K-means clustering with K = 3 on the first two
+principal component score vectors, rather than on the raw data.
+That is, perform K-means clustering on the 60 ?? 2 matrix of
+which the first column is the first principal component score
+vector, and the second column is the second principal component
+score vector. Comment on the results.
+
+**Answer:**
+
+```{r warning=FALSE, message=FALSE, error=FALSE}
+
+km_pc <- kmeans(pr_compx$x[, 1:2], 3, nstart = 20)
+table(true_labels, km_pc$cluster)
+
+```
+
+**Observation:** 
+
+1. We can say that the clusters we just obtained via K-means Clustering on the first two PCs (Principal Components) perform pretty well. 
+2. We can see that there are 3 clusters.
+3. Thus, we can conclude that, **the observations are perfectly clustered**.
+4. Unlike the previous cases, the first observation is mostly absorbed by the last cluster.
+5. On the other hand, the last observation is mostly absorbed by the first cluster.
+
+###Question 4.(g)
+
+ Using the scale() function, perform K-means clustering with
+K = 3 on the data after scaling each variable to have standard
+deviation one. How do these results compare to those obtained
+in (b)? Explain.
+
+**Answer:**
+
+```{r warning=FALSE, message=FALSE, error=FALSE}
+
+km_scale <- kmeans(scale(x), 3, nstart = 20)
+table(true_labels, km_scale$cluster)
+
+```
+
+**Observation:** 
+
+1. When compared with the results we obtained from 4.(b), we can say that we got very poor results after scaling each variable to have standard deviation one. than with unscaled data
+2. This is basically because scaling affects the distance between the observations.
+3. Thus we can conclude that scaled data has yielded worse results when compared with the unscaled data.
